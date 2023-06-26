@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/jpeg"
 	"log"
 	"math"
 	"os"
+
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 )
 
 func reverseSet(set []rune) []rune {
@@ -23,6 +26,10 @@ func squash(value float64) float64 {
 	return math.Pow(value, 3) / 255 / 255
 }
 
+func scaleToSteps(lineHeight int, imageHeight int) int {
+	return imageHeight / lineHeight
+}
+
 func grayToChar(c color.Gray, characterSet []rune) string {
 	levels := float64(len(characterSet))
 	level := squash(float64(c.Y)) / 255.0 * levels
@@ -32,9 +39,19 @@ func grayToChar(c color.Gray, characterSet []rune) string {
 	return string(characterSet[int(level)])
 }
 
-func printImage(img image.Image, characterSet []rune, scale int) {
-	for y := img.Bounds().Min.Y; y < img.Bounds().Max.Y; y += scale {
-		for x := img.Bounds().Min.X; x < img.Bounds().Max.X; x += scale / 2 {
+// func areaColor(img image.Image, x int, y int, width int, height int) color.Gray {
+// 	for y; y < y+height; y++ {
+// 		for x; x < x+width; x++ {
+//
+// 		}
+// 	}
+// }
+
+func printImage(img image.Image, characterSet []rune, scaleSteps int) {
+	// stringImage := ""
+	halfStep := scaleSteps / 2
+	for y := img.Bounds().Min.Y; y+scaleSteps < img.Bounds().Max.Y; y += scaleSteps {
+		for x := img.Bounds().Min.X; x+halfStep < img.Bounds().Max.X; x += halfStep {
 			c := color.GrayModel.Convert(img.At(x, y)).(color.Gray)
 			fmt.Print(grayToChar(c, characterSet))
 		}
@@ -61,8 +78,6 @@ func main() {
 		"squares":  []rune(" ░▒▓█"),
 	}
 
-	// afFlag := "~/Pictures/other/1684441894831350.jpg"
-
 	if *hFlag {
 		fmt.Println("idk...")
 		os.Exit(0)
@@ -79,18 +94,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// _, imageType, err := image.Decode(reader)
-	//
-	// if err != nil {
-	// 	fmt.Println(filePath)
-	// 	log.Fatal(err)
-	// }
-	//
-	img, err := jpeg.Decode(reader)
+
+	img, _, err := image.Decode(reader)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	printImage(img, characterSet, *sFlag)
+	fmt.Println(img.Bounds().Max.Y)
+	printImage(img, characterSet, scaleToSteps(*sFlag, img.Bounds().Max.Y))
 }
